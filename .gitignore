@@ -1,0 +1,9 @@
+divers
+__pycache__
+.ipynb_checkpoints
+*.gslides
+*.gdoc
+img
+*.sav
+dev/src
+other
