@@ -1,5 +1,14 @@
 import matplotlib.pyplot as plt
 from skimage.filters import threshold_multiotsu
+from skimage.restoration import denoise_tv_chambolle
+from skimage.transform import resize
+import numpy as np
+import cv2 as cv
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import GridSearchCV
+import time
+import six
+from IPython.display import Image
 
 
 def resize_h220(img, ratio):
@@ -84,3 +93,99 @@ def transform_image(original, classes=3, cmap_result='gray'):
     plt.subplots_adjust()
 
     plt.show()
+
+
+def features(image, extractor):
+    keypoints, descriptors = extractor.detectAndCompute(image, None)
+    return keypoints, descriptors
+
+
+def get_sifts_features(image):
+    sift_vectors = {}
+    descriptor_list = []
+    extractor = cv.xfeatures2d.SIFT_create()
+    for uri in image:
+        # Lecture de l'image en N&B
+        img = cv.imread(uri, 0)
+        # Normalisation de l'image
+        img = img.astype("float32")/255
+        # Réduction du bruit
+        denoised_img = denoise_tv_chambolle(img, weight=0.1, multichannel=True)
+        # Conversion en 8 bit
+        img8bit = cv.normalize(denoised_img,
+                               None,
+                               0,
+                               255,
+                               cv.NORM_MINMAX).astype('uint8')
+        # Calcul des descripteurs
+        kp, desc = features(img8bit, extractor)
+
+        descriptor_list.extend(desc)
+        sift_vectors[uri] = desc
+
+    return [descriptor_list, sift_vectors]
+
+
+def get_predict_sift(image, km, k):
+    matrix = pd.DataFrame(columns=range(k))
+    extractor = cv.xfeatures2d.SIFT_create()
+    for uri in image:
+        # Lecture de l'image en N&B
+        img = cv.imread(uri, 0)
+        # Normalisation de l'image
+        img = img.astype("float32")/255
+        # Réduction du bruit
+        denoised_img = denoise_tv_chambolle(img, weight=0.1, multichannel=True)
+        # Conversion en 8 bit
+        img8bit = cv.normalize(denoised_img,
+                               None,
+                               0,
+                               255,
+                               cv.NORM_MINMAX).astype('uint8')
+        # Calcul des descripteurs
+        kp, desc = features(img8bit, extractor)
+
+        label = km.predict(desc)
+        unique, counts = np.unique(label, return_counts=True)
+        matrix = matrix.append(dict(zip(unique, counts)), ignore_index=True)
+    return matrix.fillna(0)
+
+
+def export_png_table(data, col_width=2.2, row_height=0.625, font_size=10,
+                     header_color='#7451eb', row_colors=['#f1f1f2', 'w'],
+                     edge_color='w', bbox=[0, 0, 1, 1], header_columns=1,
+                     ax=None, filename='table.png', **kwargs):
+    ax = None
+    if ax is None:
+        size = (np.array(data.shape[::-1]) + np.array([0, 1])
+                ) * np.array([col_width, row_height])
+        fig, ax = plt.subplots(figsize=size)
+        ax.axis('off')
+
+    mpl_table = ax.table(cellText=data.values, bbox=bbox,
+                         colLabels=data.columns, **kwargs)
+
+    mpl_table.auto_set_font_size(False)
+    mpl_table.set_fontsize(font_size)
+
+    for k, cell in six.iteritems(mpl_table._cells):
+        cell.set_edgecolor(edge_color)
+        if k[0] == 0 or k[1] < header_columns:
+            cell.set_text_props(weight='bold', color='w')
+            cell.set_facecolor(header_color)
+        else:
+            cell.set_facecolor(row_colors[k[0] % len(row_colors)])
+
+    fig.savefig(filename, transparent=True)
+    plt.close()
+    display(Image(filename))
+    return ax
+
+
+def exec_time(start, end):
+    diff_time = end - start
+    m, s = divmod(diff_time, 60)
+    h, m = divmod(m, 60)
+    s, m, h = int(round(s, 0)), int(round(m, 0)), int(round(h, 0))
+    duration = "{0:02d}:{1:02d}:{2:02d}".format(h, m, s)
+    return duration
