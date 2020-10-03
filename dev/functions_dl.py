@@ -3,6 +3,7 @@ from skimage.filters import threshold_multiotsu
 from skimage.restoration import denoise_tv_chambolle
 from skimage.transform import resize
 import numpy as np
+import pandas as pd
 import cv2 as cv
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import GridSearchCV
@@ -101,7 +102,6 @@ def features(image, extractor):
 
 
 def get_sifts_features(image):
-    sift_vectors = {}
     descriptor_list = []
     extractor = cv.xfeatures2d.SIFT_create()
     for uri in image:
@@ -121,12 +121,11 @@ def get_sifts_features(image):
         kp, desc = features(img8bit, extractor)
 
         descriptor_list.extend(desc)
-        sift_vectors[uri] = desc
 
-    return [descriptor_list, sift_vectors]
+    return descriptor_list
 
 
-def get_predict_sift(image, km, k):
+def get_vector_sift(image, km, k):
     matrix = pd.DataFrame(columns=range(k))
     extractor = cv.xfeatures2d.SIFT_create()
     for uri in image:
@@ -189,3 +188,57 @@ def exec_time(start, end):
     s, m, h = int(round(s, 0)), int(round(m, 0)), int(round(h, 0))
     duration = "{0:02d}:{1:02d}:{2:02d}".format(h, m, s)
     return duration
+
+
+def evaluate_classifier(X_train, X_test, y_train, y_test, classifiers, cv=5,
+                        scoring='accuracy', target_name='models'):
+    """[summary]
+    Args:
+        X_train (object): Données d'entrainements
+        X_test (object): Données de tests
+        y_train (object): Données d'entrainements
+        y_test (object): Données de tests
+        classifiers (dict): Contient les modèles et les hyperparamètres
+        cv (int, optional): [description]. Defaults to 5.
+        scoring (str, optional): [description]. Defaults to 'accuracy'.
+        target_name (str, optional): [description]. Defaults to 'models'.
+    """
+
+    results = pd.DataFrame()
+    for class_name, class_, class_params in classifiers:
+        print(f"{class_name} en cours d'exécution...")
+        model = GridSearchCV(class_, param_grid=class_params, cv=cv,
+                             scoring=scoring, n_jobs=-1)
+        model.fit(X_train, y_train)
+
+        # Je stocke les résultats du GridSearchCV dans un dataframe
+        model_results_df = pd.DataFrame(model.cv_results_)
+
+        # Je sélectionne la meilleure observation
+        cond = model_results_df["rank_test_score"] == 1
+        model_results_df = model_results_df[cond]
+
+        # Prediction
+        y_pred = model.predict(X_test)
+
+        # J'ajoute le nom du modéle et les résultats sur les données de test
+        model_results_df[target_name] = class_name
+        score = accuracy_score(y_test, y_pred)
+        model_results_df['Test : ' + scoring] = round(score, 3)
+
+        # Les hyperparamètres des classifieurs étant changeant,
+        # je crée un nouveau dataframe à partir de la colonne params
+        # des résultats. Je jointe les 2 dataframes à partir des index.
+        col = [target_name, 'Test : ' + scoring,
+               'mean_test_score', 'mean_fit_time']
+        model_results_df = pd.merge(model_results_df[col],
+                                    pd.DataFrame(model.cv_results_['params']),
+                                    left_index=True, right_index=True)
+
+        col = ['mean_test_score', 'mean_fit_time']
+        model_results_df[col] = round(model_results_df[col], 2)
+        # Je stocke les résultats dans un nouveau dataframe.
+        results = results.append(model_results_df)
+
+    filename = 'img/' + target_name + '.png'
+    export_png_table(results, filename=filename)
