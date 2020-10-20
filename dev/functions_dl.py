@@ -10,6 +10,7 @@ from sklearn.model_selection import GridSearchCV
 import time
 import six
 from IPython.display import Image
+from keras.preprocessing import image
 
 
 def resize_h220(img, ratio):
@@ -53,7 +54,7 @@ def rgb_color(img):
 
 def compare_img(original, transformed, title_orignal='Original',
                 title_transformed='Transformed',
-                cmap_result='gray'):
+                cmap_result='gray', filename=None):
     fig, ax = plt.subplots(nrows=1, ncols=2, figsize=(16, 6))
 
     ax[0].imshow(original, cmap=cmap_result)
@@ -65,10 +66,11 @@ def compare_img(original, transformed, title_orignal='Original',
     ax[1].axis('off')
 
     plt.subplots_adjust()
+    plt.savefig('./img/preprocess_image_' + filename + '.png', transparent=True)
     plt.show()
 
 
-def transform_image(original, classes=3, cmap_result='gray'):
+def transform_image(original, classes=3, cmap_result='gray', filename=None):
     thresholds = threshold_multiotsu(original, classes=classes)
     regions = np.digitize(original, bins=thresholds)
 
@@ -92,7 +94,7 @@ def transform_image(original, classes=3, cmap_result='gray'):
     ax[2].axis('off')
 
     plt.subplots_adjust()
-
+    plt.savefig('./img/preprocess_image_' + filename + '_' + str(classes) + 'classes.png', transparent=True)
     plt.show()
 
 
@@ -242,3 +244,26 @@ def evaluate_classifier(X_train, X_test, y_train, y_test, classifiers, cv=5,
 
     filename = 'img/' + target_name + '.png'
     export_png_table(results, filename=filename)
+
+def get_img_aug(img, datagen):
+    x = image.img_to_array(img)
+    x = x.reshape((1,) + x.shape)
+    fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(10, 10))
+    
+    i = 0 
+    y = 0
+    z = 0
+    for batch in datagen.flow(x):
+        ax[y, z].imshow(image.array_to_img(batch[0])) 
+        ax[y, z].set_title('Augmentation ' + str(i))
+        # Changement de subplot
+        z += 1
+        if z % 2 == 0:
+            z = 0
+            y = 1
+
+        # Arrêt au bout de 4 images
+        i+=1
+        if i % 4 == 0 :
+            plt.savefig('./img/preprocess_image_data_augmentation.png', transparent=True)
+            break
