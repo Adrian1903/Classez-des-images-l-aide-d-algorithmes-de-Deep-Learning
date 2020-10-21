@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Dogs breeds classifier</title>
+    <link href='https://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet'>
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet'>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+    <link rel="shortcut icon" href="/static/img/favicon.ico">
+    {{ dropzone.load_css() }}
+</head>
+
+<body>
+    <div class="content">
+        <header>
+            <img src="/static/img/img_dogs.png" alt="Image dog classifier">
+            <h1>
+                Dogs breeds classifier
+            </h1>
+        </header>
+    </div>
+    <div>
+        {{ dropzone.create(action='/uploads') }}
+        {{ dropzone.config() }}
+    </div>
+    <div id="new">
+        <form action="/dogs">
+            <input type="submit" value="Get breeds" class='bt' />
+        </form>
+        <form action="/">
+            <input type="submit" value="Clear files" class='bt_clear' />
+        </form>
+    </div>
+    <div class="space_breeds">
+        <script>
+            function range(start, stop, step) {
+                var a = [start], b = start;
+                while (b < stop) {
+                    a.push(b += step || 1);
+                }
+                return a;
+            }
+
+            function get_img(element) {
+                var newImg = document.createElement("img");
+                newImg.setAttribute("src", element)
+                newImg.setAttribute("alt", element)
+                /*newBut.setAttribute("class", style)*/
+                var currentDiv = document.getElementById('new');
+                document.body.insertBefore(newImg, currentDiv.nextSibling);
+            }
+
+
+            function get_breeds(element, style) {
+                var newBut = document.createElement("button");
+                var newButContent = document.createTextNode(element);
+                newBut.appendChild(newButContent);
+                newBut.setAttribute("class", style)
+                var currentDiv = document.getElementById('new');
+                document.body.insertBefore(newBut, currentDiv.nextSibling);
+            }
+            if ('{{ breed_lst }}') {
+                var img_lst = '{{img_lst}}'.split(',')
+                var breed_lst = '{{breed_lst}}'.split(',')
+
+                var len = img_lst.length
+
+                for (i in range(0, len - 1)) {
+                    /* Création des div */
+                    var newGlobalDiv = document.createElement('div');
+                    newGlobalDiv.setAttribute("class", "parent")
+                    /* Création de l'image */
+                    var newImg = document.createElement("img");
+                    newImg.setAttribute("src", img_lst[i])
+                    newImg.setAttribute("alt", img_lst[i])
+                    newImg.setAttribute("class", "enfant")
+                    newGlobalDiv.appendChild(newImg)
+                    /* Création de la race */
+                    var newBut = document.createElement("button");
+                    var newButContent = document.createTextNode(breed_lst[i])
+                    newBut.appendChild(newButContent);
+                    newBut.setAttribute("class", "bt_breeds")
+                    newGlobalDiv.appendChild(newBut)
+
+                    var currentDiv = document.getElementById('new');
+                    document.body.insertBefore(newGlobalDiv, currentDiv.nextSibling);
+
+                }
+
+            }
+
+
+        </script>
+    </div>
+
+
+    {{ dropzone.load_js() }}
+</body>
+
+</html>

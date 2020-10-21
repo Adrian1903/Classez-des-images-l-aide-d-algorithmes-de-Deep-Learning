@@ -1,0 +1,71 @@
+header {
+    color: #7451eb;
+    font-family: 'Montserrat';
+    text-align: center;
+}
+
+body {
+    font-family: 'Open Sans';
+    text-align: center;
+    background-color: #fafafa;
+}
+
+.bt {
+    font-family: 'Montserrat';
+    font-size: 16px;
+    color: #7451eb;
+    background-color: #fafafa;
+    border: 1px solid #7451eb;
+    border-radius: 1em;
+    padding: 15px 32px;
+    transition-duration: 0.4s;
+    margin: 15px;
+}
+
+.bt:hover {
+    color: white;
+    background-color: #7451eb;
+}
+
+.bt_clear {
+    font-family: 'Montserrat';
+    font-size: 16px;
+    color: #333333;
+    background-color: #fafafa;
+    border: 1px solid #333333;
+    border-radius: 1em;
+    padding: 15px 32px;
+    transition-duration: 0.4s;
+    margin: 15px;
+}
+
+.bt_clear:hover {
+    color: white;
+    background-color: #333333;
+}
+
+.bt_breeds {
+    font-family: 'Montserrat';
+    font-size: 20px;
+    font-weight: bold;
+    color: #6a6969;
+    background-color: #fafafa;
+    border: 1px solid #F48024;
+    border-radius: 1em;
+    padding: 15px 32px;
+    transition-duration: 0.4s;
+    margin: 5px;
+
+    position: absolute;
+    top: 50%; /* poussé de la moitié de hauteur du référent */
+    transform: translateY(-50%); /* tiré de la moitié de sa propre hauteur */
+}
+
+.bt_breeds:hover {
+    color: white;
+    background-color: #F48024;
+}
+
+.parent {
+    position: relative;
+}

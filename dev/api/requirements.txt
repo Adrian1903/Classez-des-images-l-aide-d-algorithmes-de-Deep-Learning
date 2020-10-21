@@ -1,0 +1,7 @@
+flask
+flask_dropzone
+pandas
+numpy
+tensorflow
+keras
+gunicorn
